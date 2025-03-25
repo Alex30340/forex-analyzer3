@@ -30,13 +30,15 @@ def run_analysis(n, symbol):
 
     df.dropna(inplace=True)
 
+    close = df['Close'].squeeze()  # Correction ici
+
     # Indicateurs
-    df['RSI'] = ta.momentum.RSIIndicator(df['Close']).rsi()
-    macd = ta.trend.MACD(df['Close'])
+    df['RSI'] = ta.momentum.RSIIndicator(close).rsi()
+    macd = ta.trend.MACD(close)
     df['MACD'] = macd.macd()
     df['MACD_signal'] = macd.macd_signal()
-    df['SMA_50'] = ta.trend.SMAIndicator(df['Close'], 50).sma_indicator()
-    df['SMA_200'] = ta.trend.SMAIndicator(df['Close'], 200).sma_indicator()
+    df['SMA_50'] = ta.trend.SMAIndicator(close, 50).sma_indicator()
+    df['SMA_200'] = ta.trend.SMAIndicator(close, 200).sma_indicator()
 
     # Setup trade
     entry = float(df['Close'].iloc[-1])
@@ -44,7 +46,6 @@ def run_analysis(n, symbol):
     tp = round(entry * 1.03, 2)
     rr = round(abs(tp - entry) / abs(entry - sl), 2)
 
-    # Alerte
     alerts = []
     if df['RSI'].iloc[-1] > 70:
         alerts.append("RSI en surachat (>70)")
@@ -55,7 +56,7 @@ def run_analysis(n, symbol):
     elif df['MACD'].iloc[-1] < df['MACD_signal'].iloc[-1]:
         alerts.append("MACD baissier")
 
-    # Enregistrer la position
+    # Enregistrement du trade
     trade_data.append({
         "pair": symbol,
         "entry": round(entry, 2),
@@ -64,7 +65,7 @@ def run_analysis(n, symbol):
         "rr": rr
     })
 
-    # Détection de niveaux (résistances/supports simplifiées)
+    # Détection de niveaux
     def detect_levels(df, window=5):
         levels = []
         for i in range(window, len(df) - window):
@@ -98,46 +99,29 @@ def run_analysis(n, symbol):
         marker_color='lightblue', opacity=0.3
     ))
 
-    # Lignes SL/TP/Entrée
+    # SL, TP, Entrée
     fig.add_hline(y=entry, line_color="blue", line_dash="dot", annotation_text="Entrée", annotation_position="top left")
     fig.add_hline(y=tp, line_color="green", line_dash="dash", annotation_text="TP", annotation_position="top left")
     fig.add_hline(y=sl, line_color="red", line_dash="dash", annotation_text="SL", annotation_position="bottom left")
 
-    # Lignes de niveaux
     for date, level in levels:
         fig.add_shape(type='line', x0=date, x1=date,
                       y0=level * 0.995, y1=level * 1.005,
                       line=dict(color="purple", width=1, dash="dot"))
 
-    layout = dbc.Container([
-    html.H4("Analyse Technique Automatique"),
-    dcc.Dropdown(
-        id='pair-selector',
-        options=[{'label': k, 'value': v} for k, v in pairs.items()],
-        value='BTC-USD',
-        style={'width': '300px'}
-    ),
-    html.Button('Analyser', id='analyze-button', n_clicks=0, className='btn btn-primary mt-2'),
-    html.Div(id='results', className='mt-4'),
-    dcc.Graph(id='chart')
-], fluid=True)
-
+    fig.update_layout(
+        title=f"Analyse : {symbol}",
+        xaxis_title="Date",
+        yaxis_title="Prix",
+        xaxis_rangeslider_visible=False,
+        yaxis=dict(domain=[0.25, 1]),
+        yaxis2=dict(domain=[0, 0.2], showgrid=False),
+        height=600,
+        template="plotly_white"
+    )
 
     return html.Div([
         html.P(f"Entrée : {entry:.2f} € | SL : {sl:.2f} € | TP : {tp:.2f} €"),
         html.P(f"Risque/Rendement : {rr}"),
         html.Ul([html.Li(alert) for alert in alerts]) if alerts else html.P("Aucune alerte détectée.")
     ]), fig
-layout = dbc.Container([
-    html.H4("Analyse Technique Automatique"),
-    dcc.Dropdown(
-        id='pair-selector',
-        options=[{'label': k, 'value': v} for k, v in pairs.items()],
-        value='BTC-USD',
-        style={'width': '300px'}
-    ),
-    html.Button('Analyser', id='analyze-button', n_clicks=0, className='btn btn-primary mt-2'),
-    html.Div(id='results', className='mt-4'),
-    dcc.Graph(id='chart')
-], fluid=True)
-
