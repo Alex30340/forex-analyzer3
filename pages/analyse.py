@@ -75,7 +75,7 @@ def run_analysis(n, symbol):
         "rr": rr
     })
 
-    def detect_levels(df, window=5):
+ def detect_levels(df, window=5):
     levels = []
     for i in range(window, len(df) - window):
         low = df['Low'].iloc[i]
@@ -89,7 +89,6 @@ def run_analysis(n, symbol):
         if is_resistance:
             levels.append((df.index[i], high))
     return levels
-
 
     levels = detect_levels(df)
 
