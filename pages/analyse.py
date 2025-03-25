@@ -98,6 +98,7 @@ def run_analysis(n, symbol):
     return levels
 
 
+
     levels = detect_levels(df)
 
     fig = go.Figure()
