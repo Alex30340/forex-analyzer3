@@ -6,6 +6,7 @@ import pandas as pd
 import ta
 from core.app_instance import app
 from data.session import trade_data
+
 pairs = {
     'BTC/USD': 'BTC-USD',
     'XAU/USD': 'GC=F',
@@ -13,6 +14,19 @@ pairs = {
     'EUR/NZD': 'EURNZD=X',
     'EUR/CAD': 'EURCAD=X'
 }
+
+layout = dbc.Container([
+    html.H4("Analyse Technique Automatique"),
+    dcc.Dropdown(
+        id='pair-selector',
+        options=[{'label': k, 'value': v} for k, v in pairs.items()],
+        value='BTC-USD',
+        style={'width': '300px'}
+    ),
+    html.Button('Analyser', id='analyze-button', n_clicks=0, className='btn btn-primary mt-2'),
+    html.Div(id='results', className='mt-4'),
+    dcc.Graph(id='chart')
+], fluid=True)
 
 @app.callback(
     Output('results', 'children'),
@@ -27,12 +41,10 @@ def run_analysis(n, symbol):
     df = yf.download(symbol, period="6mo", interval="1d")
     if df.empty:
         return "Données non disponibles.", go.Figure()
-
     df.dropna(inplace=True)
 
-    close = df['Close'].squeeze()  # Correction ici
+    close = df['Close'].squeeze()
 
-    # Indicateurs
     df['RSI'] = ta.momentum.RSIIndicator(close).rsi()
     macd = ta.trend.MACD(close)
     df['MACD'] = macd.macd()
@@ -40,7 +52,6 @@ def run_analysis(n, symbol):
     df['SMA_50'] = ta.trend.SMAIndicator(close, 50).sma_indicator()
     df['SMA_200'] = ta.trend.SMAIndicator(close, 200).sma_indicator()
 
-    # Setup trade
     entry = float(df['Close'].iloc[-1])
     sl = round(entry * 0.98, 2)
     tp = round(entry * 1.03, 2)
@@ -56,7 +67,6 @@ def run_analysis(n, symbol):
     elif df['MACD'].iloc[-1] < df['MACD_signal'].iloc[-1]:
         alerts.append("MACD baissier")
 
-    # Enregistrement du trade
     trade_data.append({
         "pair": symbol,
         "entry": round(entry, 2),
@@ -65,7 +75,6 @@ def run_analysis(n, symbol):
         "rr": rr
     })
 
-    # Détection de niveaux
     def detect_levels(df, window=5):
         levels = []
         for i in range(window, len(df) - window):
@@ -79,10 +88,8 @@ def run_analysis(n, symbol):
 
     levels = detect_levels(df)
 
-    # Graphique
     fig = go.Figure()
 
-    # Bougies japonaises
     fig.add_trace(go.Candlestick(
         x=df.index,
         open=df['Open'],
@@ -92,14 +99,12 @@ def run_analysis(n, symbol):
         name="Bougies"
     ))
 
-    # Volume
     fig.add_trace(go.Bar(
         x=df.index, y=df['Volume'],
         name="Volume", yaxis='y2',
         marker_color='lightblue', opacity=0.3
     ))
 
-    # SL, TP, Entrée
     fig.add_hline(y=entry, line_color="blue", line_dash="dot", annotation_text="Entrée", annotation_position="top left")
     fig.add_hline(y=tp, line_color="green", line_dash="dash", annotation_text="TP", annotation_position="top left")
     fig.add_hline(y=sl, line_color="red", line_dash="dash", annotation_text="SL", annotation_position="bottom left")
@@ -125,27 +130,3 @@ def run_analysis(n, symbol):
         html.P(f"Risque/Rendement : {rr}"),
         html.Ul([html.Li(alert) for alert in alerts]) if alerts else html.P("Aucune alerte détectée.")
     ]), fig
-layout = dbc.Container([
-    html.H4("Analyse Technique Automatique"),
-    dcc.Dropdown(
-        id='pair-selector',
-        options=[{'label': k, 'value': v} for k, v in pairs.items()],
-        value='BTC-USD',
-        style={'width': '300px'}
-    ),
-    html.Button('Analyser', id='analyze-button', n_clicks=0, className='btn btn-primary mt-2'),
-    html.Div(id='results', className='mt-4'),
-    dcc.Graph(id='chart')
-], fluid=True)
-layout = dbc.Container([
-    html.H4("Analyse Technique Automatique"),
-    dcc.Dropdown(
-        id='pair-selector',
-        options=[{'label': k, 'value': v} for k, v in pairs.items()],
-        value='BTC-USD',
-        style={'width': '300px'}
-    ),
-    html.Button('Analyser', id='analyze-button', n_clicks=0, className='btn btn-primary mt-2'),
-    html.Div(id='results', className='mt-4'),
-    dcc.Graph(id='chart')
-], fluid=True)
