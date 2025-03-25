@@ -36,15 +36,17 @@ layout = dbc.Container([
 def detect_levels(df, window=5):
     levels = []
     for i in range(window, len(df) - window):
-        low = df['Low'].iloc[i].item()
-        high = df['High'].iloc[i].item()
+        low = df['Low'].iloc[i].item() if hasattr(df['Low'].iloc[i], 'item') else df['Low'].iloc[i]
+        high = df['High'].iloc[i].item() if hasattr(df['High'].iloc[i], 'item') else df['High'].iloc[i]
 
         is_support = all(
-            (low < df['Low'].iloc[i - j].item()) and (low < df['Low'].iloc[i + j].item())
+            (low < df['Low'].iloc[i - j].item() if hasattr(df['Low'].iloc[i - j], 'item') else df['Low'].iloc[i - j]) and
+            (low < df['Low'].iloc[i + j].item() if hasattr(df['Low'].iloc[i + j], 'item') else df['Low'].iloc[i + j])
             for j in range(1, window + 1)
         )
         is_resistance = all(
-            (high > df['High'].iloc[i - j].item()) and (high > df['High'].iloc[i + j].item())
+            (high > df['High'].iloc[i - j].item() if hasattr(df['High'].iloc[i - j], 'item') else df['High'].iloc[i - j]) and
+            (high > df['High'].iloc[i + j].item() if hasattr(df['High'].iloc[i + j], 'item') else df['High'].iloc[i + j])
             for j in range(1, window + 1)
         )
 
@@ -100,6 +102,11 @@ def run_analysis(n, symbol):
         "tp": tp,
         "rr": rr
     })
+
+    df.index = pd.to_datetime(df.index)
+
+    if df.empty or any(col not in df.columns for col in ['Open', 'High', 'Low', 'Close']):
+        return "Données insuffisantes pour afficher le graphique.", go.Figure()
 
     levels = detect_levels(df)
 
