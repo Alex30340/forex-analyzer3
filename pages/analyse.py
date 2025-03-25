@@ -1,3 +1,4 @@
+from core.app_instance import app
 @app.callback(
     Output('results', 'children'),
     Output('chart', 'figure'),
