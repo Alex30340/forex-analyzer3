@@ -81,14 +81,19 @@ def run_analysis(n, symbol):
         low = df['Low'].iloc[i]
         high = df['High'].iloc[i]
 
-        is_support = all([low < df['Low'].iloc[i - j] and low < df['Low'].iloc[i + j] for j in range(1, window + 1)])
-        is_resistance = all([high > df['High'].iloc[i - j] and high > df['High'].iloc[i + j] for j in range(1, window + 1)])
+        is_support = all(
+            low < df['Low'].iloc[i - j] and low < df['Low'].iloc[i + j] for j in range(1, window + 1)
+        )
+        is_resistance = all(
+            high > df['High'].iloc[i - j] and high > df['High'].iloc[i + j] for j in range(1, window + 1)
+        )
 
         if is_support:
             levels.append((df.index[i], low))
         if is_resistance:
             levels.append((df.index[i], high))
     return levels
+
 
     levels = detect_levels(df)
 
