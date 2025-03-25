@@ -6,6 +6,14 @@ import pandas as pd
 import ta
 from core.app_instance import app
 from data.session import trade_data
+pairs = {
+    'BTC/USD': 'BTC-USD',
+    'XAU/USD': 'GC=F',
+    'GBP/JPY': 'GBPJPY=X',
+    'EUR/NZD': 'EURNZD=X',
+    'EUR/CAD': 'EURCAD=X'
+}
+
 @app.callback(
     Output('results', 'children'),
     Output('chart', 'figure'),
