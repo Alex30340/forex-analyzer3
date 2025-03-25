@@ -95,16 +95,19 @@ def run_analysis(n, symbol):
                       y0=level * 0.995, y1=level * 1.005,
                       line=dict(color="purple", width=1, dash="dot"))
 
-    fig.update_layout(
-        title=f"Analyse : {symbol}",
-        xaxis_title="Date",
-        yaxis_title="Prix",
-        xaxis_rangeslider_visible=False,
-        yaxis=dict(domain=[0.25, 1]),
-        yaxis2=dict(domain=[0, 0.2], showgrid=False),
-        height=600,
-        template="plotly_white"
-    )
+    layout = dbc.Container([
+    html.H4("Analyse Technique Automatique"),
+    dcc.Dropdown(
+        id='pair-selector',
+        options=[{'label': k, 'value': v} for k, v in pairs.items()],
+        value='BTC-USD',
+        style={'width': '300px'}
+    ),
+    html.Button('Analyser', id='analyze-button', n_clicks=0, className='btn btn-primary mt-2'),
+    html.Div(id='results', className='mt-4'),
+    dcc.Graph(id='chart')
+], fluid=True)
+
 
     return html.Div([
         html.P(f"Entrée : {entry:.2f} € | SL : {sl:.2f} € | TP : {tp:.2f} €"),
