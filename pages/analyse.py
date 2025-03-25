@@ -1,3 +1,4 @@
+from dash.dependencies import Input, Output, State
 from core.app_instance import app
 @app.callback(
     Output('results', 'children'),
