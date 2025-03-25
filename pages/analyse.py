@@ -36,15 +36,15 @@ layout = dbc.Container([
 def detect_levels(df, window=5):
     levels = []
     for i in range(window, len(df) - window):
-        low = df['Low'].iloc[i]
-        high = df['High'].iloc[i]
+        low = df['Low'].iloc[i].item()
+        high = df['High'].iloc[i].item()
 
         is_support = all(
-            (low < df['Low'].iloc[i - j]) and (low < df['Low'].iloc[i + j])
+            (low < df['Low'].iloc[i - j].item()) and (low < df['Low'].iloc[i + j].item())
             for j in range(1, window + 1)
         )
         is_resistance = all(
-            (high > df['High'].iloc[i - j]) and (high > df['High'].iloc[i + j])
+            (high > df['High'].iloc[i - j].item()) and (high > df['High'].iloc[i + j].item())
             for j in range(1, window + 1)
         )
 
