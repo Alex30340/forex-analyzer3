@@ -23,6 +23,14 @@ layout = dbc.Container([
         value='BTC-USD',
         style={'width': '300px'}
     ),
-    html.Button('Analyser', id='analyze-button', n_clicks=0, className='btn btn-primary mt-2'),
-    html.Div(id='results')
+    html.Button(
+        'Analyser',
+        id='analyze-button',
+        n_clicks=0,
+        className='btn btn-primary mt-2'
+    ),
+    html.Div(id='results', className='mt-4'),
+    dcc.Graph(id='chart')
+], fluid=True)
+
 
