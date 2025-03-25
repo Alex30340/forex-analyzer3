@@ -1,5 +1,11 @@
-from dash.dependencies import Input, Output, State
+from dash import html, dcc, Input, Output, State
+import dash_bootstrap_components as dbc
+import yfinance as yf
+import plotly.graph_objects as go
+import pandas as pd
+import ta
 from core.app_instance import app
+from data.session import trade_data
 @app.callback(
     Output('results', 'children'),
     Output('chart', 'figure'),
