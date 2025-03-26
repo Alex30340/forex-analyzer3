@@ -203,8 +203,15 @@ def run_analysis(n, symbol, interval):
         template="plotly_dark"
     )
 
-    # 🔧 Forcer l’échelle visuelle Y si les prix sont trop plats
-    fig.update_yaxes(range=[df['Low'].min() * 0.99, df['High'].max() * 1.01], fixedrange=False)
+    # 🔧 Forcer une plage visuelle même en cas de prix plats
+    min_price = df['Low'].min()
+    max_price = df['High'].max()
+    if max_price - min_price < 0.01:
+        center = (max_price + min_price) / 2
+        min_price = center - 0.01
+        max_price = center + 0.01
+
+    fig.update_yaxes(range=[min_price, max_price], fixedrange=False)
 
     return html.Div([
         html.P(f"Entrée : {entry:.2f} € | SL : {sl:.2f} € | TP : {tp:.2f} €"),
