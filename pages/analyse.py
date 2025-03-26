@@ -85,6 +85,13 @@ def run_analysis(n, symbol, interval):
         return "Données non disponibles.", go.Figure()
     df.dropna(inplace=True)
 
+    if df.empty or any(col not in df.columns for col in ['Open', 'High', 'Low', 'Close']):
+        return "Données insuffisantes pour afficher le graphique.", go.Figure()
+
+    if df[['Open', 'High', 'Low', 'Close']].nunique().sum() == 0:
+        return "Pas de variation de prix suffisante pour afficher les bougies.", go.Figure()
+
+    df.index = pd.to_datetime(df.index)
     close = df['Close'].squeeze()
 
     df['RSI'] = ta.momentum.RSIIndicator(close).rsi()
@@ -117,11 +124,6 @@ def run_analysis(n, symbol, interval):
         "rr": rr
     })
 
-    df.index = pd.to_datetime(df.index)
-
-    if df.empty or any(col not in df.columns for col in ['Open', 'High', 'Low', 'Close']):
-        return "Données insuffisantes pour afficher le graphique.", go.Figure()
-
     levels = detect_levels(df)
 
     fig = go.Figure()
@@ -132,7 +134,9 @@ def run_analysis(n, symbol, interval):
         high=df['High'],
         low=df['Low'],
         close=df['Close'],
-        name="Bougies"
+        name="Bougies",
+        increasing_line_color='green',
+        decreasing_line_color='red'
     ))
 
     fig.add_trace(go.Scatter(
