@@ -15,6 +15,13 @@ pairs = {
     'EUR/CAD': 'EURCAD=X'
 }
 
+intervals = {
+    '1 Heure (H1)': '60m',
+    '4 Heures (H4)': '240m',
+    '1 Jour (D1)': '1d',
+    '1 Semaine (W1)': '1wk'
+}
+
 layout = dbc.Container([
     html.H4("Analyse Technique Automatique"),
     dcc.Dropdown(
@@ -22,6 +29,12 @@ layout = dbc.Container([
         options=[{'label': k, 'value': v} for k, v in pairs.items()],
         value='BTC-USD',
         style={'width': '300px'}
+    ),
+    dcc.Dropdown(
+        id='interval-selector',
+        options=[{'label': k, 'value': v} for k, v in intervals.items()],
+        value='1d',
+        style={'width': '300px', 'marginTop': '10px'}
     ),
     html.Button(
         'Analyser',
@@ -60,13 +73,14 @@ def detect_levels(df, window=5):
     Output('results', 'children'),
     Output('chart', 'figure'),
     Input('analyze-button', 'n_clicks'),
-    State('pair-selector', 'value')
+    State('pair-selector', 'value'),
+    State('interval-selector', 'value')
 )
-def run_analysis(n, symbol):
+def run_analysis(n, symbol, interval):
     if not symbol:
         return "Sélectionnez une paire", go.Figure()
 
-    df = yf.download(symbol, period="6mo", interval="1d")
+    df = yf.download(symbol, period="60d", interval=interval)
     if df.empty:
         return "Données non disponibles.", go.Figure()
     df.dropna(inplace=True)
@@ -121,6 +135,22 @@ def run_analysis(n, symbol):
         name="Bougies"
     ))
 
+    fig.add_trace(go.Scatter(
+        x=df.index,
+        y=df['SMA_50'],
+        mode='lines',
+        name='SMA 50',
+        line=dict(color='blue', width=1)
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=df.index,
+        y=df['SMA_200'],
+        mode='lines',
+        name='SMA 200',
+        line=dict(color='orange', width=1)
+    ))
+
     fig.add_trace(go.Bar(
         x=df.index, y=df['Volume'],
         name="Volume", yaxis='y2',
@@ -137,13 +167,13 @@ def run_analysis(n, symbol):
                       line=dict(color="purple", width=1, dash="dot"))
 
     fig.update_layout(
-        title=f"Analyse : {symbol}",
+        title=f"Analyse : {symbol} - {interval}",
         xaxis_title="Date",
         yaxis_title="Prix",
         xaxis_rangeslider_visible=False,
         yaxis=dict(domain=[0.25, 1]),
         yaxis2=dict(domain=[0, 0.2], showgrid=False),
-        height=600,
+        height=700,
         template="plotly_white"
     )
 
