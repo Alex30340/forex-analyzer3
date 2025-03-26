@@ -17,7 +17,7 @@ pairs = {
 
 intervals = {
     '1 Heure (H1)': '60m',
-    '4 Heures (H4)': '60m',  # fallback temporaire vers 60m
+    '4 Heures (H4)': '60m',
     '1 Jour (D1)': '1d',
     '1 Semaine (W1)': '1wk'
 }
@@ -36,12 +36,7 @@ layout = dbc.Container([
         value='1d',
         style={'width': '300px', 'marginTop': '10px'}
     ),
-    html.Button(
-        'Analyser',
-        id='analyze-button',
-        n_clicks=0,
-        className='btn btn-primary mt-2'
-    ),
+    html.Button('Analyser', id='analyze-button', n_clicks=0, className='btn btn-primary mt-2'),
     html.Div(id='results', className='mt-4'),
     dcc.Graph(id='chart')
 ], fluid=True)
@@ -49,19 +44,11 @@ layout = dbc.Container([
 def detect_levels(df, window=5):
     levels = []
     for i in range(window, len(df) - window):
-        low = df['Low'].iloc[i].item() if hasattr(df['Low'].iloc[i], 'item') else df['Low'].iloc[i]
-        high = df['High'].iloc[i].item() if hasattr(df['High'].iloc[i], 'item') else df['High'].iloc[i]
+        low = float(df['Low'].iloc[i])
+        high = float(df['High'].iloc[i])
 
-        is_support = all(
-            (low < df['Low'].iloc[i - j].item() if hasattr(df['Low'].iloc[i - j], 'item') else df['Low'].iloc[i - j]) and
-            (low < df['Low'].iloc[i + j].item() if hasattr(df['Low'].iloc[i + j], 'item') else df['Low'].iloc[i + j])
-            for j in range(1, window + 1)
-        )
-        is_resistance = all(
-            (high > df['High'].iloc[i - j].item() if hasattr(df['High'].iloc[i - j], 'item') else df['High'].iloc[i - j]) and
-            (high > df['High'].iloc[i + j].item() if hasattr(df['High'].iloc[i + j], 'item') else df['High'].iloc[i + j])
-            for j in range(1, window + 1)
-        )
+        is_support = all((low < float(df['Low'].iloc[i - j])) and (low < float(df['Low'].iloc[i + j])) for j in range(1, window + 1))
+        is_resistance = all((high > float(df['High'].iloc[i - j])) and (high > float(df['High'].iloc[i + j])) for j in range(1, window + 1))
 
         if is_support:
             levels.append((df.index[i], low))
@@ -82,7 +69,7 @@ def run_analysis(n, symbol, interval):
 
     period = "60d"
     if interval.endswith("m"):
-        period = "7d"  # pour les données intraday
+        period = "7d"
 
     df = yf.download(symbol, period=period, interval=interval)
     if df.empty:
@@ -105,7 +92,7 @@ def run_analysis(n, symbol, interval):
     df['SMA_50'] = ta.trend.SMAIndicator(close, 50).sma_indicator()
     df['SMA_200'] = ta.trend.SMAIndicator(close, 200).sma_indicator()
 
-    entry = float(df['Close'].iloc[-1].item())
+    entry = float(df['Close'].iloc[-1])
     sl = round(entry * 0.98, 2)
     tp = round(entry * 1.03, 2)
     rr = round(abs(tp - entry) / abs(entry - sl), 2)
@@ -151,44 +138,17 @@ def run_analysis(n, symbol, interval):
     except Exception as e:
         print("Erreur bougies :", e)
 
-    fig.add_trace(go.Scatter(
-        x=df.index,
-        y=df['Close'],
-        mode='lines',
-        name='Clôture',
-        line=dict(color='white', width=1, dash='dot')
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=df.index,
-        y=df['SMA_50'],
-        mode='lines',
-        name='SMA 50',
-        line=dict(color='blue', width=1)
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=df.index,
-        y=df['SMA_200'],
-        mode='lines',
-        name='SMA 200',
-        line=dict(color='orange', width=1)
-    ))
-
-    fig.add_trace(go.Bar(
-        x=df.index, y=df['Volume'],
-        name="Volume", yaxis='y2',
-        marker_color='lightblue', opacity=0.3
-    ))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], mode='lines', name='Clôture', line=dict(color='white', width=1, dash='dot')))
+    fig.add_trace(go.Scatter(x=df.index, y=df['SMA_50'], mode='lines', name='SMA 50', line=dict(color='blue', width=1)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['SMA_200'], mode='lines', name='SMA 200', line=dict(color='orange', width=1)))
+    fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name="Volume", yaxis='y2', marker_color='lightblue', opacity=0.3))
 
     fig.add_hline(y=entry, line_color="blue", line_dash="dot", annotation_text="Entrée", annotation_position="top left")
     fig.add_hline(y=tp, line_color="green", line_dash="dash", annotation_text="TP", annotation_position="top left")
     fig.add_hline(y=sl, line_color="red", line_dash="dash", annotation_text="SL", annotation_position="bottom left")
 
     for date, level in levels:
-        fig.add_shape(type='line', x0=date, x1=date,
-                      y0=level * 0.995, y1=level * 1.005,
-                      line=dict(color="purple", width=1, dash="dot"))
+        fig.add_shape(type='line', x0=date, x1=date, y0=level * 0.995, y1=level * 1.005, line=dict(color="purple", width=1, dash="dot"))
 
     fig.update_layout(
         title=f"Analyse : {symbol} - {interval}",
@@ -203,15 +163,19 @@ def run_analysis(n, symbol, interval):
         template="plotly_dark"
     )
 
-    # 🔧 Forcer une plage visuelle même en cas de prix plats
+    # 🔧 Étendre automatiquement la plage Y autour du cours médian si l'écart est trop faible
     min_price = float(df['Low'].min())
     max_price = float(df['High'].max())
-    if max_price - min_price < 0.01:
-        center = (max_price + min_price) / 2
-        min_price = center - 0.01
-        max_price = center + 0.01
+    price_range = max_price - min_price
+    if price_range / max_price < 0.002:
+        margin = max_price * 0.01
+        min_price -= margin
+        max_price += margin
 
     fig.update_yaxes(range=[min_price, max_price], fixedrange=False)
+
+    # ✅ Améliorer la lisibilité des bougies très fines
+    fig.update_traces(selector=dict(type='candlestick'), increasing_line_width=4, decreasing_line_width=4)
 
     return html.Div([
         html.P(f"Entrée : {entry:.2f} € | SL : {sl:.2f} € | TP : {tp:.2f} €"),
