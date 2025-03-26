@@ -17,7 +17,7 @@ pairs = {
 
 intervals = {
     '1 Heure (H1)': '60m',
-    '4 Heures (H4)': '240m',
+    '4 Heures (H4)': '60m',  # fallback temporaire vers 60m
     '1 Jour (D1)': '1d',
     '1 Semaine (W1)': '1wk'
 }
@@ -80,7 +80,11 @@ def run_analysis(n, symbol, interval):
     if not symbol:
         return "Sélectionnez une paire", go.Figure()
 
-    df = yf.download(symbol, period="60d", interval=interval)
+    period = "60d"
+    if interval.endswith("m"):
+        period = "7d"  # pour les données intraday
+
+    df = yf.download(symbol, period=period, interval=interval)
     if df.empty:
         return "Données non disponibles.", go.Figure()
     df.dropna(inplace=True)
@@ -126,13 +130,6 @@ def run_analysis(n, symbol, interval):
 
     levels = detect_levels(df)
 
-    # DEBUG : afficher les dernières valeurs OHLC
-    print("Dernières données OHLC :")
-    print(df[['Open', 'High', 'Low', 'Close']].tail(10))
-    print("Types de colonnes :")
-    print(df[['Open', 'High', 'Low', 'Close']].dtypes)
-
-    # Appliquer un petit offset aux High/Low si bougies plates
     df['High'] = df[['High', 'Low']].max(axis=1) + 0.0001
     df['Low'] = df[['High', 'Low']].min(axis=1) - 0.0001
 
@@ -154,7 +151,6 @@ def run_analysis(n, symbol, interval):
     except Exception as e:
         print("Erreur bougies :", e)
 
-    # Toujours afficher la courbe de clôture en backup
     fig.add_trace(go.Scatter(
         x=df.index,
         y=df['Close'],
@@ -201,9 +197,14 @@ def run_analysis(n, symbol, interval):
         xaxis_rangeslider_visible=False,
         yaxis=dict(domain=[0.25, 1]),
         yaxis2=dict(domain=[0, 0.2], showgrid=False),
+        dragmode='zoom',
+        xaxis=dict(fixedrange=False),
         height=700,
         template="plotly_dark"
     )
+
+    # 🔧 Forcer l’échelle visuelle Y si les prix sont trop plats
+    fig.update_yaxes(range=[df['Low'].min() * 0.99, df['High'].max() * 1.01], fixedrange=False)
 
     return html.Div([
         html.P(f"Entrée : {entry:.2f} € | SL : {sl:.2f} € | TP : {tp:.2f} €"),
