@@ -126,24 +126,40 @@ def run_analysis(n, symbol, interval):
 
     levels = detect_levels(df)
 
+    # DEBUG : afficher les dernières valeurs OHLC
+    print("Dernières données OHLC :")
+    print(df[['Open', 'High', 'Low', 'Close']].tail(10))
+    print("Types de colonnes :")
+    print(df[['Open', 'High', 'Low', 'Close']].dtypes)
+
     # Appliquer un petit offset aux High/Low si bougies plates
     df['High'] = df[['High', 'Low']].max(axis=1) + 0.0001
     df['Low'] = df[['High', 'Low']].min(axis=1) - 0.0001
 
     fig = go.Figure()
 
-    fig.add_trace(go.Candlestick(
-        x=df.index,
-        open=df['Open'],
-        high=df['High'],
-        low=df['Low'],
-        close=df['Close'],
-        name="Bougies",
-        increasing_line_color='lime',
-        decreasing_line_color='red',
-        increasing_line_width=3,
-        decreasing_line_width=3
-    ))
+    try:
+        fig.add_trace(go.Candlestick(
+            x=df.index,
+            open=df['Open'],
+            high=df['High'],
+            low=df['Low'],
+            close=df['Close'],
+            name="Bougies",
+            increasing_line_color='lime',
+            decreasing_line_color='red',
+            increasing_line_width=3,
+            decreasing_line_width=3
+        ))
+    except Exception as e:
+        print("Erreur bougies :", e)
+        fig.add_trace(go.Scatter(
+            x=df.index,
+            y=df['Close'],
+            mode='lines+markers',
+            name='Cours',
+            line=dict(color='white')
+        ))
 
     fig.add_trace(go.Scatter(
         x=df.index,
