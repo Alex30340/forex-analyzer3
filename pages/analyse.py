@@ -101,7 +101,7 @@ def run_analysis(n, symbol, interval):
     df['SMA_50'] = ta.trend.SMAIndicator(close, 50).sma_indicator()
     df['SMA_200'] = ta.trend.SMAIndicator(close, 200).sma_indicator()
 
-    entry = float(df['Close'].iloc[-1])
+    entry = float(df['Close'].iloc[-1].item())
     sl = round(entry * 0.98, 2)
     tp = round(entry * 1.03, 2)
     rr = round(abs(tp - entry) / abs(entry - sl), 2)
@@ -153,13 +153,15 @@ def run_analysis(n, symbol, interval):
         ))
     except Exception as e:
         print("Erreur bougies :", e)
-        fig.add_trace(go.Scatter(
-            x=df.index,
-            y=df['Close'],
-            mode='lines+markers',
-            name='Cours',
-            line=dict(color='white')
-        ))
+
+    # Toujours afficher la courbe de clôture en backup
+    fig.add_trace(go.Scatter(
+        x=df.index,
+        y=df['Close'],
+        mode='lines',
+        name='Clôture',
+        line=dict(color='white', width=1, dash='dot')
+    ))
 
     fig.add_trace(go.Scatter(
         x=df.index,
