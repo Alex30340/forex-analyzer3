@@ -204,8 +204,8 @@ def run_analysis(n, symbol, interval):
     )
 
     # 🔧 Forcer une plage visuelle même en cas de prix plats
-    min_price = df['Low'].min()
-    max_price = df['High'].max()
+    min_price = float(df['Low'].min())
+    max_price = float(df['High'].max())
     if max_price - min_price < 0.01:
         center = (max_price + min_price) / 2
         min_price = center - 0.01
