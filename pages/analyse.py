@@ -135,8 +135,10 @@ def run_analysis(n, symbol, interval):
         low=df['Low'],
         close=df['Close'],
         name="Bougies",
-        increasing_line_color='green',
-        decreasing_line_color='red'
+        increasing_line_color='lime',
+        decreasing_line_color='red',
+        increasing_line_width=3,
+        decreasing_line_width=3
     ))
 
     fig.add_trace(go.Scatter(
@@ -178,7 +180,7 @@ def run_analysis(n, symbol, interval):
         yaxis=dict(domain=[0.25, 1]),
         yaxis2=dict(domain=[0, 0.2], showgrid=False),
         height=700,
-        template="plotly_white"
+        template="plotly_dark"
     )
 
     return html.Div([
