@@ -126,6 +126,10 @@ def run_analysis(n, symbol, interval):
 
     levels = detect_levels(df)
 
+    # Appliquer un petit offset aux High/Low si bougies plates
+    df['High'] = df[['High', 'Low']].max(axis=1) + 0.0001
+    df['Low'] = df[['High', 'Low']].min(axis=1) - 0.0001
+
     fig = go.Figure()
 
     fig.add_trace(go.Candlestick(
